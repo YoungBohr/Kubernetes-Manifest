@@ -1,0 +1,36 @@
+---
+apiVersion: v2
+name: cem-analysis
+version: 0.0.1
+kubeVersion: ">= 1.18.8 <= 1.23.1"
+description: "cem"
+type: application
+keywords:
+  - app
+  - java
+  - cem
+home: 'https://www.cempro.cn/website/'
+sources:
+  - ''
+#dependencies: # chart 必要条件列表 （可选）
+#  - name:
+#    version:
+#    repository:
+#    condition:
+#    tags:
+#      - 用于一次启用/禁用 一组chart的tag
+#    import-values:
+#      - ImportValue
+#    alias:
+maintainers:
+  - name: gaopan
+    email: gaopan@data100.com
+    url: gaopan@data100.com
+# icon:
+appVersion: 0.0.1
+#deprecated:
+annotations:
+  name: cem-analysis
+  tier: backend
+  runtime: java
+...

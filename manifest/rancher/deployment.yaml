@@ -1,0 +1,108 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rancher
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: rancher
+    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: kube-system
+    app.kubernetes.io/component: platform
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rancher
+      app.kubernetes.io/version: "2.6"
+      app.kubernetes.io/tier: middleware
+      app.kubernetes.io/enviroment: kube-system
+      app.kubernetes.io/component: platform
+  template:
+    metadata:
+      name: rancher
+      namespace: kube-system
+      labels:
+        app.kubernetes.io/name: rancher
+        app.kubernetes.io/version: "2.6"
+        app.kubernetes.io/tier: middleware
+        app.kubernetes.io/enviroment: kube-system
+        app.kubernetes.io/component: platform
+    spec:
+      hostname: rancher
+      restartPolicy: Always
+      #serviceAccountName: rancher
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: kube-monitoring
+      tolerations:
+        - key: node.kubernetes.io/env
+          operator: Equal
+          value: kube-monitoring
+          effect: NoSchedule
+      containers:
+        - name: rancher
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/rancher:2.6"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--http-listen-port=80"
+            - "--https-listen-port=443"
+          env:
+#            - name: CATTLE_NAMESPACE
+#              value: kube-system
+            - name: CATTLE_BOOTSTRAP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "rancher"
+                  key: "bootstrapPassword"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/rancher
+            - name: log
+              mountPath: /var/log/auditlog
+          ports:
+            - name: "http"
+              protocol: TCP
+              containerPort: 80
+            - name: "https"
+              protocol: TCP
+              containerPort: 443
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 3
+            failureThreshold: 10
+            timeoutSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+      volumes:
+        - name: data
+          hostPath:
+            path: /data/rancher/data
+            type: DirectoryOrCreate
+        - name: log
+          hostPath:
+            path: /data/rancher/log
+            type: DirectoryOrCreate
+...

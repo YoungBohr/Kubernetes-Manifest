@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: descheduler
+  namespace: kube-system
+  labels:
+    app: descheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: descheduler
+  template:
+    metadata:
+      labels:
+        app: descheduler
+    spec:
+      priorityClassName: system-cluster-critical
+      serviceAccountName: descheduler-sa
+      imagePullSecrets:
+        - name: aliyun-regcred
+      containers:
+        - name: descheduler
+          image: registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/descheduler:v0.23.1
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/descheduler"
+          args:
+            - "--policy-config-file"
+            - "/policy-dir/policy.yaml"
+            - "--descheduling-interval"
+            - "10s"
+            - "--v"
+            - "3"
+          ports:
+          - containerPort: 10258
+            protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10258
+              scheme: HTTPS
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+            - mountPath: /policy-dir
+              name: policy-volume
+      volumes:
+      - name: policy-volume
+        configMap:
+          name: descheduler-policy-configmap
+...

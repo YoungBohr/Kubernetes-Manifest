@@ -1,0 +1,111 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/version: "v2.34.0"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: kube-monitoring
+    app.kubernetes.io/component: tsdb
+spec:
+  serviceName: prometheus
+  replicas: 1
+  revisionHistoryLimit: 1
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+      app.kubernetes.io/version: "v2.34.0"
+      app.kubernetes.io/tier: middleware
+      app.kubernetes.io/enviroment: kube-monitoring
+      app.kubernetes.io/component: tsdb
+  template:
+    metadata:
+      name: prometheus
+      namespace: kube-monitoring
+      labels:
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/version: "v2.34.0"
+        app.kubernetes.io/tier: middleware
+        app.kubernetes.io/enviroment: kube-monitoring
+        app.kubernetes.io/component: tsdb
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      hostname: prometheus
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      serviceAccountName: prometheus
+      nodeSelector:
+        node.kubernetes.io/env: kube-monitoring
+      tolerations:
+        - key: node.kubernetes.io/env
+          operator: Equal
+          value: kube-monitoring
+          effect: NoSchedule
+      containers:
+        - name: prometheus
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/prometheus:v2.34.0"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "6Gi"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: data
+              mountPath: /prometheus
+          command:
+            - "/bin/prometheus"
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.retention.time=39d"
+            - "--web.enable-lifecycle"
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 9090
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 3
+            failureThreshold: 10
+            timeoutSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+        - name: watch
+          image: registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/watch:master-5b84af2
+          imagePullPolicy: IfNotPresent
+          args: [ "-v", "-t", "-p=/etc/prometheus", "curl", "-X", "POST", "--fail", "-o", "-", "-sS", "http://localhost:9090/-/reload" ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus
+        - name: data
+          hostPath:
+            path: /data/prometheus
+            type: DirectoryOrCreate
+...

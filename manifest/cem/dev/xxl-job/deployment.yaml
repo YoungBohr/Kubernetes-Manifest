@@ -1,0 +1,74 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xxl-job
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: xxl-job
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/release: stable
+    app.kubernetes.io/track: weekly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: dev
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: xxl-job
+      app.kubernetes.io/version: "2.3.0"
+      app.kubernetes.io/release: stable
+      app.kubernetes.io/track: weekly
+      app.kubernetes.io/component: microservices
+      app.kubernetes.io/tier: backend
+      app.kubernetes.io/runtime: java
+      app.kubernetes.io/enviroment: dev
+  template:
+    metadata:
+      name: xxl-job
+      namespace: dev
+      labels:
+        app.kubernetes.io/name: xxl-job
+        app.kubernetes.io/version: "2.3.0"
+        app.kubernetes.io/release: stable
+        app.kubernetes.io/track: weekly
+        app.kubernetes.io/component: microservices
+        app.kubernetes.io/tier: backend
+        app.kubernetes.io/runtime: java
+        app.kubernetes.io/enviroment: dev
+    spec:
+      hostname: xxl-job
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: dev
+        kubernetes.io/hostname: k8s-node2
+      containers:
+        - name: xxl-job
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/xxl-job:dev"
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8105
+      volumes:
+        - name: data
+          emptyDir: {}
+...

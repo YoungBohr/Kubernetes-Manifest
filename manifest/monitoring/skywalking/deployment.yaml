@@ -1,0 +1,89 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking
+  namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/name: skywalking
+    app.kubernetes.io/version: "8.9.0"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: kube-monitoring
+    app.kubernetes.io/component: apm
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: skywalking
+      app.kubernetes.io/version: "8.9.0"
+      app.kubernetes.io/tier: middleware
+      app.kubernetes.io/enviroment: kube-monitoring
+      app.kubernetes.io/component: apm
+  template:
+    metadata:
+      name: skywalking
+      namespace: kube-monitoring
+      labels:
+        app.kubernetes.io/name: skywalking
+        app.kubernetes.io/version: "8.9.0"
+        app.kubernetes.io/tier: middleware
+        app.kubernetes.io/enviroment: kube-monitoring
+        app.kubernetes.io/component: apm
+    spec:
+      hostname: skywalking
+      restartPolicy: Always
+      serviceAccountName: skywalking
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: kube-monitoring
+      tolerations:
+        - key: node.kubernetes.io/env
+          operator: Equal
+          value: kube-monitoring
+          effect: NoSchedule
+      containers:
+        - name: skywalking
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/skywalking-oap-server:8.9.0"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+          volumeMounts:
+            - name: config
+              mountPath: /skywalking/config/application.yml
+              subPath: application.yml
+          ports:
+            - name: in
+              protocol: TCP
+              containerPort: 11800
+            - name: out
+              protocol: TCP
+              containerPort: 12800
+        - name: skywalking-ui
+          image: registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/skywalking-ui:8.9.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: config
+              mountPath: /skywalking/webapp/webapp.yml
+              subPath: webapp.yml
+            - name: config
+              mountPath: /skywalking/webapp/logback.xml
+              subPath: logback.xml
+          ports:
+            - name: dashboard
+              protocol: TCP
+              containerPort: 8080
+      volumes:
+        - name: config
+          configMap:
+            name: skywalking
+...

@@ -1,0 +1,95 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cem
+  namespace: pre
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 10m
+    nginx.ingress.kubernetes.io/proxy-body-size: 1024m
+    nginx.ingress.kubernetes.io/server-snippet: |
+      access_log /var/log/nginx/xxxxxxxxxx.access.log;
+      error_log /var/log/nginx/xxxxxxxxxx.error.log;
+      location = / {
+          rewrite ^/(.*)$ https://xxxxxxxxxx/website/$1 permanent;
+      }
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - xxxxxxxxxx
+    secretName: cempro.cn-tls
+  rules:
+  - host: xxxxxxxxxx
+    http:
+      paths:
+      - path: /website
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-website
+            port:
+              number: 80
+      - path: /a/
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-answer-web
+            port:
+              number: 80
+      - path: /child/answer
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-answer-web
+            port:
+              number: 80
+      - path: /child/dashboard
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-dashboard-web
+            port:
+              number: 80
+      - path: /h5/
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-h5
+            port:
+              number: 80
+      - path: /library
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-library
+            port:
+              number: 80
+      - path: /child/survey
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-survey-web
+            port:
+              number: 80
+      - path: /child/new-survey
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-new-survey-web
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-main
+            port:
+              number: 80
+  defaultBackend:
+    service:
+      name: cem-website
+      port:
+        number: 80
+...

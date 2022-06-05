@@ -1,0 +1,99 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-message
+  namespace: staging
+  labels:
+    app.kubernetes.io/name: cem-message
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: staging
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cem-message
+      app.kubernetes.io/release: beta
+      app.kubernetes.io/track: nightly
+      app.kubernetes.io/component: microservices
+      app.kubernetes.io/tier: backend
+      app.kubernetes.io/runtime: java
+      app.kubernetes.io/enviroment: staging
+  template:
+    metadata:
+      name: cem-message
+      namespace: staging
+      labels:
+        app.kubernetes.io/name: cem-message
+        app.kubernetes.io/release: beta
+        app.kubernetes.io/track: nightly
+        app.kubernetes.io/component: microservices
+        app.kubernetes.io/tier: backend
+        app.kubernetes.io/runtime: java
+        app.kubernetes.io/enviroment: staging
+    spec:
+      hostname: cem-message
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: staging
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: cem-message
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100-dev/cem-message:latest"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: scripts
+              mountPath: /usr/bin/run
+              subPath: run
+            - name: logs
+              mountPath: /app/app/logs
+            - name: plugins
+              mountPath: /app/plugins
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              memory: "4Gi"
+          command:
+            - run
+            - cem-message
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8106
+          startupProbe:
+            httpGet:
+              path: /message/health
+              port: 8106
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+      volumes:
+        - name: scripts
+          configMap:
+            name: scripts
+            defaultMode: 0711
+        - name: logs
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/cem/staging/logs/cem-message
+        - name: plugins
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/plugins
+...

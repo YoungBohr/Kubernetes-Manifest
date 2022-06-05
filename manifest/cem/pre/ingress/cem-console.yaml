@@ -1,0 +1,38 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cem-console
+  namespace: pre
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 10m
+    nginx.ingress.kubernetes.io/proxy-body-size: 1024m
+    nginx.ingress.kubernetes.io/server-snippet: |
+      access_log /var/log/nginx/consolexxxxxxxxxx.access.log;
+      error_log /var/log/nginx/consolexxxxxxxxxx.error.log;
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - consolexxxxxxxxxx
+    secretName: cempro.cn-tls
+  rules:
+  - host: consolexxxxxxxxxx
+    http:
+      paths:
+      - path: /console/
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-console
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-console-web
+            port:
+              number: 80
+...

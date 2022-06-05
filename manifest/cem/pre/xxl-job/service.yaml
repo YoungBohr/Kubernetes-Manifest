@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xxl-job
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: xxl-job
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/release: stable
+    app.kubernetes.io/track: weekly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: pre
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: xxl-job
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/release: stable
+    app.kubernetes.io/track: weekly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: pre
+  ports:
+    - name: server
+      port: 8233
+      targetPort: 8233
+      protocol: TCP
+...
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xxl-job-external
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: xxl-job
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/release: stable
+    app.kubernetes.io/track: weekly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: pre
+spec:
+  type: NodePort
+  externalIPs:
+    - 192.168.1.137
+  selector:
+    app.kubernetes.io/name: xxl-job
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/release: stable
+    app.kubernetes.io/track: weekly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: pre
+  ports:
+    - name: server
+      port: 8233
+      targetPort: 8233
+      protocol: TCP
+...

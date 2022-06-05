@@ -1,0 +1,100 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-console
+  namespace: staging
+  labels:
+    app.kubernetes.io/name: cem-console
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: staging
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cem-console
+      app.kubernetes.io/release: beta
+      app.kubernetes.io/track: nightly
+      app.kubernetes.io/component: microservices
+      app.kubernetes.io/tier: backend
+      app.kubernetes.io/runtime: java
+      app.kubernetes.io/enviroment: staging
+  template:
+    metadata:
+      name: cem-console
+      namespace: staging
+      labels:
+        app.kubernetes.io/name: cem-console
+        app.kubernetes.io/release: beta
+        app.kubernetes.io/track: nightly
+        app.kubernetes.io/component: microservices
+        app.kubernetes.io/tier: backend
+        app.kubernetes.io/runtime: java
+        app.kubernetes.io/enviroment: staging
+    spec:
+      hostname: cem-console
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: staging
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: cem-console
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100-dev/cem-console:latest"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: scripts
+              mountPath: /usr/bin/run
+              subPath: run
+            - name: logs
+              mountPath: /app/app/logs
+            - name: plugins
+              mountPath: /app/plugins
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          command:
+            - run
+            - cem-console
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8089
+          startupProbe:
+            httpGet:
+              path: /console/health
+              port: 8089
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+      volumes:
+        - name: scripts
+          configMap:
+            name: scripts
+            defaultMode: 0711
+        - name: logs
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/cem/staging/logs/cem-console
+        - name: plugins
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/plugins
+...

@@ -1,0 +1,127 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-dashboard
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: cem-dashboard
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: dev
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cem-dashboard
+      app.kubernetes.io/release: beta
+      app.kubernetes.io/track: nightly
+      app.kubernetes.io/component: microservices
+      app.kubernetes.io/tier: backend
+      app.kubernetes.io/runtime: java
+      app.kubernetes.io/enviroment: dev
+  template:
+    metadata:
+      name: cem-dashboard
+      namespace: dev
+      labels:
+        app.kubernetes.io/name: cem-dashboard
+        app.kubernetes.io/release: beta
+        app.kubernetes.io/track: nightly
+        app.kubernetes.io/component: microservices
+        app.kubernetes.io/tier: backend
+        app.kubernetes.io/runtime: java
+        app.kubernetes.io/enviroment: dev
+    spec:
+      hostname: cem-dashboard
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: node.kubernetes.io/env
+                  operator: In
+                  values:
+                    - dev
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - cem-crontab
+                        - cem-gateway
+                        - cem-message
+                        - cem-sftp
+                topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: cem-dashboard
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100-dev/cem-dashboard:dev"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: scripts
+              mountPath: /usr/bin/run
+              subPath: run
+            - name: logs
+              mountPath: /app/app/logs
+            - name: plugins
+              mountPath: /app/plugins
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              memory: "2Gi"
+          env:
+            - name: JAVA_XMS
+              value: 2048m
+            - name: JAVA_XMX
+              value: 2048m
+            - name: JAVA_XMN
+              value: 768m
+          command:
+            - run
+            - cem-dashboard
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8107
+          startupProbe:
+            httpGet:
+              path: /dashboard/health
+              port: 8107
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+      volumes:
+        - name: scripts
+          configMap:
+            name: scripts
+            defaultMode: 0711
+        - name: logs
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/cem/dev/logs/cem-dashboard
+        - name: plugins
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/plugins
+...

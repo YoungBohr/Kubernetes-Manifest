@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cem-website
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: cem-website
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/tier: frontend
+    app.kubernetes.io/runtime: javascript
+    app.kubernetes.io/enviroment: pre
+data:
+  default.conf:  |
+    server {
+        listen 80;
+        server_name xxxxxxxxxx;
+        access_log /dev/stdout json;
+        error_log /dev/stdout warn;
+        root /app;
+        index index.html index.htm;
+
+        location  = / {
+            try_files $uri $uri/ /index.html;
+            index index.html index.htm;
+            add_header Cache-Control no-cache;
+            add_header Pragma no-cache;
+            add_header Expires 0;
+        }
+
+        location  /website {
+            alias /app;
+            try_files $uri $uri/ /index.html;
+            index index.html index.htm;
+            add_header Cache-Control no-cache;
+            add_header Pragma no-cache;
+            add_header Expires 0;
+        }
+
+        location /healthz {
+            access_log off;
+            allow 127.0.0.1;
+            deny all;
+            return 200;
+        }
+    }
+...

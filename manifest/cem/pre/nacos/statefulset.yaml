@@ -1,0 +1,119 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nacos
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: nacos
+    app.kubernetes.io/version: "2.0.3"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: pre
+    app.kubernetes.io/component: srad
+spec:
+  serviceName: nacos
+  replicas: 1
+  revisionHistoryLimit: 3
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nacos
+      app.kubernetes.io/version: "2.0.3"
+      app.kubernetes.io/tier: middleware
+      app.kubernetes.io/enviroment: pre
+      app.kubernetes.io/component: srad
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      name: nacos
+      namespace: pre
+      labels:
+        app.kubernetes.io/name: nacos
+        app.kubernetes.io/version: "2.0.3"
+        app.kubernetes.io/tier: middleware
+        app.kubernetes.io/enviroment: pre
+        app.kubernetes.io/component: srad
+      annotations:
+        pod.alpha.kubernetes.io/initialized: "true"
+    spec:
+      hostname: nacos
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: pre
+        kubernetes.io/hostname: k8s-node5
+      containers:
+        - name: nacos
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/nacos:2.0.3"
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          volumeMounts:
+            - name: config
+              mountPath: /home/nacos/conf/application.properties
+              subPath: application.properties
+            - name: data
+              mountPath: /home/nacos/plugins/peer-finder
+              subPath: peer-finder
+            - name: data
+              mountPath: /home/nacos/data
+              subPath: data
+            - name: data
+              mountPath: /home/nacos/logs
+              subPath: logs
+          env:
+            - name: MODE
+              value: standalone
+#            - name: SPRING_DATASOURCE_PLATFORM
+#              value: mysql
+#            - name: MYSQL_SERVICE_HOST
+#              valueFrom:
+#                secretKeyRef:
+#                  name: mysql
+#                  key: host
+#            - name: MYSQL_SERVICE_PORT
+#              valueFrom:
+#                secretKeyRef:
+#                  name: mysql
+#                  key: port
+#            - name: MYSQL_SERVICE_DB_NAME
+#              valueFrom:
+#                secretKeyRef:
+#                  name: mysql
+#                  key: database
+#            - name: MYSQL_SERVICE_USER
+#              valueFrom:
+#                secretKeyRef:
+#                  name: mysql
+#                  key: user
+#            - name: MYSQL_SERVICE_PASSWORD
+#              valueFrom:
+#                secretKeyRef:
+#                  name: mysql
+#                  key: password
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8848
+            - name: rpc
+              protocol: TCP
+              containerPort: 9848
+            - name: raft-rpc
+              protocol: TCP
+              containerPort: 9849
+      volumes:
+        - name: config
+          configMap:
+            name: nacos-config
+        - name: data
+          nfs:
+            path: /data/nfs/cem/pre/nacos
+            server:
+...

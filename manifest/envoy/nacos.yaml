@@ -1,0 +1,21 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: nacos
+  namespace: default
+spec:
+  hosts:
+  - ""
+  gateways:
+  - nacos
+  http:
+  - match:
+    - uri:
+        prefix: /nacos
+    route:
+    - destination:
+        port:
+          number: 8848
+        host: nacos.dev.svc.cluster.local
+...

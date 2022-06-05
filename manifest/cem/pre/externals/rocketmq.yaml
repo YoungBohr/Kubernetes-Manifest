@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rocketmq-namesrv
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: rocketmq-namesrv
+    app.kubernetes.io/enviroment: pre
+    app.kubernetes.io/version: "4.4.0"
+    app.kubernetes.io/component: message-queue
+    app.kubernetes.io/part-of: cem
+spec:
+  clusterIP: None
+  ports:
+    - name: rocketmq-namesrv
+      port: 9876
+      targetPort: 9876
+      protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: rocketmq-namesrv
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: rocketmq-namesrv
+    app.kubernetes.io/enviroment: pre
+    app.kubernetes.io/version: "4.4.0"
+    app.kubernetes.io/component: message-queue
+    app.kubernetes.io/part-of: cem
+subsets:
+  - addresses:
+      - ip:
+    ports:
+      - name: rocketmq-namesrv
+        port: 9876
+        protocol: TCP
+...

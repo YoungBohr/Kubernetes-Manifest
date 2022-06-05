@@ -1,0 +1,107 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-put
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: cem-put
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: pre
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cem-put
+      app.kubernetes.io/release: beta
+      app.kubernetes.io/track: nightly
+      app.kubernetes.io/component: microservices
+      app.kubernetes.io/tier: backend
+      app.kubernetes.io/runtime: java
+      app.kubernetes.io/enviroment: pre
+  template:
+    metadata:
+      name: cem-put
+      namespace: pre
+      labels:
+        app.kubernetes.io/name: cem-put
+        app.kubernetes.io/release: beta
+        app.kubernetes.io/track: nightly
+        app.kubernetes.io/component: microservices
+        app.kubernetes.io/tier: backend
+        app.kubernetes.io/runtime: java
+        app.kubernetes.io/enviroment: pre
+    spec:
+      hostname: cem-put
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: pre
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: cem-put
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100-dev/cem-put:pre"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: scripts
+              mountPath: /usr/bin/run
+              subPath: run
+            - name: logs
+              mountPath: /app/app/logs
+            - name: plugins
+              mountPath: /app/plugins
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          env:
+            - name: JAVA_XMS
+              value: 1024m
+            - name: JAVA_XMX
+              value: 1024m
+            - name: JAVA_XMN
+              value: 384m
+          command:
+            - run
+            - cem-put
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8102
+          startupProbe:
+            httpGet:
+              path: /put/health
+              port: 8102
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 270
+            timeoutSeconds: 3
+      volumes:
+        - name: scripts
+          configMap:
+            name: scripts
+            defaultMode: 0711
+        - name: logs
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/cem/pre/logs/cem-put
+        - name: plugins
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/plugins
+...

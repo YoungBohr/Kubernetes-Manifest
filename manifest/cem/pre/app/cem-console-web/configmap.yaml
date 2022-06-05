@@ -1,0 +1,48 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cem-console-web
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: cem-console-web
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/tier: frontend
+    app.kubernetes.io/runtime: javascript
+    app.kubernetes.io/enviroment: pre
+data:
+  default.conf:  |
+    server {
+        listen 80;
+        server_name consolexxxxxxxxxx;
+        access_log /dev/stdout json;
+        error_log /dev/stdout warn;
+        root /app;
+        index index.html index.htm;
+
+        location ~* \.(html|js|css|gif|jpg|jpeg|png|bmp|swf)$ {
+            access_log off;
+            add_header Cache-Control  max-age=no-cache;
+            add_header Pragma no-cache;
+            add_header Expires 0;
+        }
+
+        location / {
+            index index.html index.htm;
+            try_files $uri $uri/ @router;
+        }
+
+        location @router {
+            rewrite ^.*$ /index.html last;
+        }
+
+        location /healthz {
+            access_log off;
+            allow 127.0.0.1;
+            deny all;
+            return 200;
+        }
+    }
+...

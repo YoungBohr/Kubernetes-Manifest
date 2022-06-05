@@ -1,0 +1,103 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-new-survey-web
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: cem-new-survey-web
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/tier: frontend
+    app.kubernetes.io/runtime: javascript
+    app.kubernetes.io/enviroment: dev
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cem-new-survey-web
+      app.kubernetes.io/release: beta
+      app.kubernetes.io/track: nightly
+      app.kubernetes.io/component: webserver
+      app.kubernetes.io/tier: frontend
+      app.kubernetes.io/runtime: javascript
+      app.kubernetes.io/enviroment: dev
+  template:
+    metadata:
+      name: cem-new-survey-web
+      namespace: dev
+      labels:
+        app.kubernetes.io/name: cem-new-survey-web
+        app.kubernetes.io/release: beta
+        app.kubernetes.io/track: nightly
+        app.kubernetes.io/component: webserver
+        app.kubernetes.io/tier: frontend
+        app.kubernetes.io/runtime: javascript
+        app.kubernetes.io/enviroment: dev
+    spec:
+      hostname: cem-new-survey-web
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsGroup: 65534
+        runAsUser: 65534
+      imagePullSecrets:
+        - name: aliyun-regcred
+      nodeSelector:
+        node.kubernetes.io/env: dev
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: cem-new-survey-web
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100-dev/cem-new-survey-web:dev"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /usr/local/openresty/nginx/conf.d/default.conf
+              subPath: default.conf
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "2Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 3
+            failureThreshold: 10
+            timeoutSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - nginx
+                  - -s
+                  - quit
+      volumes:
+        - name: config
+          configMap:
+            name: cem-new-survey-web
+...

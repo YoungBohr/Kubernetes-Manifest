@@ -1,0 +1,29 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cem-website
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: cem-website
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/tier: frontend
+    app.kubernetes.io/runtime: javascript
+    app.kubernetes.io/enviroment: dev
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cem-website
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/tier: frontend
+    app.kubernetes.io/runtime: javascript
+    app.kubernetes.io/enviroment: dev
+  ports:
+    - name: server
+      port: 80
+      targetPort: 80
+      protocol: TCP

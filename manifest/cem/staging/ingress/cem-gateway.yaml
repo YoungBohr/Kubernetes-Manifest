@@ -1,0 +1,30 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cem-gateway
+  namespace: staging
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/server-snippet: |
+      access_log /var/log/nginx/pre.cempro.cn.access.log;
+      error_log /var/log/nginx/pre.cempro.cn.error.log;
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - pre.cempro.cn
+    secretName: cempro.cn-tls
+  rules:
+  - host: pre.cempro.cn
+    http:
+      paths:
+      - path: /icloud(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-gateway
+            port:
+              number: 80
+...

@@ -1,0 +1,220 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cem-nginx-config
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/version: "1.19.9.1"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: dev
+    app.kubernetes.io/component: proxy-server
+data:
+  nginx.conf: |
+    #user  nobody;
+    worker_processes auto;
+
+    # Enables the use of JIT for regular expressions to speed-up their processing.
+    pcre_jit on;
+
+    #error_log  logs/error.log;
+    #error_log  logs/error.log  notice;
+    #error_log  logs/error.log  info;
+
+    #pid        logs/nginx.pid;
+    worker_rlimit_nofile 51200;
+
+    events {
+        use epoll;
+        worker_connections 65535;
+        multi_accept on;
+    }
+
+    http {
+        include       mime.types;
+        default_type  application/octet-stream;
+
+        # Enables or disables the use of underscores in client request header fields.
+        # When the use of underscores is disabled, request header fields whose names contain underscores are marked as invalid and become subject to the ignore_invalid_headers directive.
+        # underscores_in_headers off;
+
+        #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+        #                  '$status $body_bytes_sent "$http_referer" '
+        #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+        #access_log  logs/access.log  main;
+
+        # Log in JSON Format
+        log_format json escape=json '{ "timestamp": "$time_iso8601", '
+            '"remote_addr": "$remote_addr", '
+            '"body_bytes_sent": $body_bytes_sent, '
+            '"request_time": $request_time, '
+            '"response_status": $status, '
+            '"request": "$request", '
+            '"request_method": "$request_method", '
+            '"host": "$host",'
+            '"upstream_addr": "$upstream_addr",'
+            '"http_x_forwarded_for": "$http_x_forwarded_for",'
+            '"http_referrer": "$http_referer", '
+            '"http_user_agent": "$http_user_agent", '
+            '"http_version": "$server_protocol", '
+            '"nginx_access": true }';
+         #access_log /dev/stdout nginxlog_json;
+
+        client_body_temp_path /var/run/openresty/nginx-client-body;
+        proxy_temp_path       /var/run/openresty/nginx-proxy;
+        fastcgi_temp_path     /var/run/openresty/nginx-fastcgi;
+        uwsgi_temp_path       /var/run/openresty/nginx-uwsgi;
+        scgi_temp_path        /var/run/openresty/nginx-scgi;
+
+        sendfile        on;
+        tcp_nopush      on;
+        tcp_nodelay     on;
+
+        keepalive_timeout  65;
+
+        client_max_body_size 1024m;
+        client_body_buffer_size 10m;
+        client_header_buffer_size 32k;
+        large_client_header_buffers 4 32k;
+        server_names_hash_bucket_size 128;
+
+        gzip  on;
+        gzip_buffers 16 8k;
+        gzip_comp_level 6;
+        gzip_http_version 1.1;
+        gzip_min_length 256;
+        gzip_proxied any;
+        gzip_vary on;
+        gzip_types
+            text/xml application/xml application/atom+xml application/rss+xml
+            text/javascript application/javascript application/x-javascript
+            text/x-json application/json application/x-web-app-manifest+json
+            text/plain text/x-component application/xhtml+xml image/svg+xml
+            font/opentype application/x-font-ttf application/vnd.ms-fontobject
+            text/css image/x-icon;
+        gzip_disable "MSIE [1-6]\.(?!.*SV1)";
+
+        include /etc/nginx/conf.d/*.conf;
+
+        # server_tokens off;
+    }
+  default.conf:  |
+    upstream website {
+        server cem-website;
+    }
+
+    upstream library {
+        server cem-library;
+    }
+
+    upstream answer {
+        server cem-answer-web;
+    }
+
+    upstream survey {
+        server cem-survey-web;
+    }
+
+    upstream new-survey {
+        server cem-new-survey-web;
+    }
+
+    upstream dashboard {
+        server cem-dashboard-web;
+    }
+
+    upstream h5 {
+        server cem-h5;
+    }
+
+    upstream main{
+        server cem-main;
+    }
+
+    upstream gateway {
+        server cem-gateway;
+    }
+
+    upstream nacos {
+        server nacos:8848;
+    }
+    server {
+        listen 80;
+        listen 443 ssl;
+        server_name test.cempro.cn;
+        access_log /dev/stdout json;
+        error_log  /dev/stdout warn;
+
+        ssl_certificate     /usr/local/openresty/nginx/cert/cempro.cn/tls.crt;
+        ssl_certificate_key /usr/local/openresty/nginx/cert/cempro.cn/tls.key;
+        ssl_session_timeout 5m;
+        ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        ssl_prefer_server_ciphers on;
+
+        if ($scheme = http) {
+            return 301 https://$server_name$request_uri;
+        }
+
+        location = / {
+            rewrite ^/(.*)$ https://dev.cempro.cn/website/$1 permanent;
+        }
+
+        location /website {
+            proxy_pass http://website;
+        }
+
+        location /library {
+            proxy_pass http://library;
+        }
+
+        location /a {
+            proxy_pass http://answer;
+        }
+
+        location /child/answer {
+            proxy_pass http://answer;
+        }
+
+        location /child/survey {
+            proxy_pass http://survey;
+        }
+
+        location /child/new-survey {
+            proxy_pass http://new-survey;
+        }
+
+        location /child/dashboard {
+            proxy_pass http://dashboard;
+        }
+
+        location /h5 {
+            proxy_pass http://h5;
+        }
+
+        location / {
+            #if ($request_uri = '/') {
+            #    rewrite ^/(.*)$ https://test.cempro.cn/website/$1 permanent;
+            #}
+            proxy_pass http://main;
+        }
+
+        location ^~ /icloud/ {
+            rewrite ^/icloud/(.*)$ /$1 break;
+            proxy_pass http://gateway;
+        }
+    }
+
+    server {
+        listen 80;
+        server_name ;
+        access_log /dev/stdout json;
+        error_log  /dev/stdout warn;
+
+        location /nacos {
+            proxy_pass http://nacos;
+        }
+    }
+...

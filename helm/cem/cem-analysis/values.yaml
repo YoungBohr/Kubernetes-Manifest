@@ -1,0 +1,17 @@
+---
+app:
+  name: cem-analysis
+  version: "0.0.1"
+  release: beta
+  track: nightly
+  component: micoservice
+  tier: backend
+  runtime: java
+  enviroment: dev
+
+deployment:
+  namespace: dev
+  restartPolicy: Always
+
+
+...

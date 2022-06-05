@@ -1,0 +1,128 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cem
+  namespace: default
+spec:
+  hosts:
+    - "xxxxxxxxxxx"
+  gateways:
+    - ingress-gateway
+  http:
+  - match:
+    - uri:
+        exact: /
+    rewrite:
+      uri: /website/
+    route:
+    - destination:
+        host: cem-website.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /website
+    route:
+    - destination:
+        host: cem-website.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /a/
+    - uri:
+        prefix: /child/answer
+    route:
+    - destination:
+        host: cem-answer-web.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /child/dashboard/
+    route:
+    - destination:
+        host: cem-dashboard-web.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /h5/
+    route:
+    - destination:
+        host: cem-h5.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /library/
+    route:
+    - destination:
+        host: cem-library.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /child/survey/
+    route:
+    - destination:
+        host: cem-survey-web.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /child/new-survey/
+    route:
+    - destination:
+        host: cem-new-survey-web.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /icloud/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: cem-gateway.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: cem-main.dev.svc.cluster.local
+        port:
+          number: 80
+...
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: cem-console
+  namespace: default
+spec:
+  hosts:
+    - "xxxxxxxxxxx"
+  gateways:
+    - ingress-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /console/
+    route:
+    - destination:
+        host: cem-console.dev.svc.cluster.local
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: cem-console-web.dev.svc.cluster.local
+        port:
+          number: 80
+...

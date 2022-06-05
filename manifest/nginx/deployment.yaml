@@ -1,0 +1,90 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-nginx
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: nginx
+    app.kubernetes.io/version: "1.19.9.1"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: dev
+    app.kubernetes.io/component: proxy-server
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "25%"
+      maxUnavailable: "25%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx
+      app.kubernetes.io/version: "1.19.9.1"
+      app.kubernetes.io/tier: middleware
+      app.kubernetes.io/enviroment: dev
+      app.kubernetes.io/component: proxy-server
+  template:
+    metadata:
+      name: cem-nginx
+      namespace: dev
+      labels:
+        app.kubernetes.io/name: nginx
+        app.kubernetes.io/version: "1.19.9.1"
+        app.kubernetes.io/tier: middleware
+        app.kubernetes.io/enviroment: dev
+        app.kubernetes.io/component: proxy-server
+    spec:
+      hostname: cem-nginx
+      restartPolicy: Always
+#      securityContext:
+#        runAsNonRoot: true
+      imagePullSecrets:
+        - name: aliyun-regcred
+      containers:
+        - name: cem-nginx
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/nginx:latest"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /usr/local/openresty/nginx/conf/nginx.conf
+              subPath: nginx.conf
+            - name: config
+              mountPath: /usr/local/openresty/nginx/conf.d/default.conf
+              subPath: default.conf
+            - name: certs
+              mountPath: /usr/local/openresty/nginx/cert/cempro.cn
+          resources:
+            requests:
+              cpu: "1m"
+              memory: "2Mi"
+            limits:
+              cpu: "4000m"
+              memory: "4Gi"
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 80
+            - name: https
+              protocol: TCP
+              containerPort: 443
+#          livenessProbe:
+#            httpGet:
+#              path: /healthz
+#              port: 80
+#            periodSeconds: 5
+#          readinessProbe:
+#            httpGet:
+#              path: /healthz
+#              port: 80
+#            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: cem-nginx-config
+        - name: certs
+          secret:
+            secretName: cempro.cn-certs
+...

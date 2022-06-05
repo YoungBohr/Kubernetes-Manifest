@@ -1,0 +1,94 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/version: "v2.4.0"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: kube-monitoring
+    app.kubernetes.io/component: ams
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/version: "v2.4.0"
+      app.kubernetes.io/tier: middleware
+      app.kubernetes.io/enviroment: kube-monitoring
+      app.kubernetes.io/component: ams
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alertmanager
+        app.kubernetes.io/version: "v2.4.0"
+        app.kubernetes.io/tier: middleware
+        app.kubernetes.io/enviroment: kube-monitoring
+        app.kubernetes.io/component: ams
+    spec:
+      hostname: alertmanager
+      restartPolicy: Always
+      nodeSelector:
+        node.kubernetes.io/env: kube-monitoring
+      tolerations:
+        - key: node.kubernetes.io/env
+          operator: Equal
+          value: kube-monitoring
+          effect: NoSchedule
+      containers:
+        - name: alertmanager
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/altermanager:v2.4.0"
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 50m
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager/alertmanager.yml
+              subPath: alertmanager.yml
+            - name: data
+              mountPath: /alertmanager
+          command:
+            - "/bin/alertmanager"
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+          ports:
+            - name: altermanager
+              containerPort: 9093
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9093
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 3
+            failureThreshold: 10
+            timeoutSeconds: 3
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+              scheme: HTTP
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+      volumes:
+        - name: config
+          configMap:
+            name: alertmanager
+        - name: data
+          hostPath:
+            path: /data/prometheus/alertmanager
+            type: DirectoryOrCreate

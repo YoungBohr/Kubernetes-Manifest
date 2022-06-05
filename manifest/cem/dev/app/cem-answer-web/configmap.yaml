@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cem-answer-web
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: cem-answer-web
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: webserver
+    app.kubernetes.io/tier: frontend
+    app.kubernetes.io/runtime: javascript
+    app.kubernetes.io/enviroment: dev
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name xxxxxxxx;
+        access_log /dev/stdout json;
+        error_log /dev/stdout warn;
+
+        location ^~ /child/answer {
+            alias /app;
+            try_files $uri $uri/ /child/answer/index.html;
+            add_header Cache-Control no-cache;
+            add_header Pragma no-cache;
+            add_header Expires 0;
+        }
+
+        location /a {
+            alias /app;
+            try_files $uri $uri/ /a/index.html;
+            add_header Cache-Control no-cache;
+            add_header Pragma no-cache;
+            add_header Expires 0;
+        }
+
+        location /healthz {
+            access_log off;
+            allow 127.0.0.1;
+            deny all;
+            return 200;
+        }
+    }
+...

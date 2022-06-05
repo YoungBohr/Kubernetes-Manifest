@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scripts
+  namespace: dev
+data:
+  run: |
+    #!/bin/sh
+    #
+    # Script to run command on startup
+
+    NAME="${APP:-$1}"
+    WORK_DIR="/app"
+    JAVA_HOME="/usr/lib/jvm/java-1.8-openjdk"
+    JAVA_BIN="${JAVA_HOME}/bin/java"
+    JAVA_ARCHIVE="${WORK_DIR}/${NAME}.jar"
+    JAVA_GC_LOG_PATH="${WORK_DIR}/app/logs/info/${NAME}.gc.log"
+    JAVA_HEAP_DUMP_PATH="${WORK_DIR}/app/logs/info/${NAME}-heapdump.hprof"
+    JAVA_OPTS="""
+      -server
+      -Duser.timezone=GMT+8
+      -Xms${JAVA_XMS:-"128m"}
+      -Xmx${JAVA_XMX:-"128m"}
+      -Xmn${JAVA_XMN:-"48m"}
+      -XX:+UseContainerSupport
+      -XX:+UseFastAccessorMethods
+      -XX:+DisableExplicitGC
+      -XX:+CMSParallelRemarkEnabled
+      -XX:+UseConcMarkSweepGC
+      -XX:+UseCMSInitiatingOccupancyOnly
+      -XX:CMSInitiatingOccupancyFraction=70
+      ${EXTRAS:-""}
+    """
+
+    fork(){
+      while [[ -z ${pid} ]] || [[ ! -f /proc/${pid}/comm ]]; do
+        local pid=$(ps -ef | grep ${JAVA_ARCHIVE} | awk '{print$1}' | head -1)
+      done
+      echo ${NAME} > /proc/${pid}/comm
+    }
+
+    main(){
+      mv ${JAVA_BIN}  ${JAVA_HOME}/bin/${NAME}
+      cd ${WORK_DIR} && ${NAME} ${JAVA_OPTS} -jar ${JAVA_ARCHIVE}
+    }
+
+    main

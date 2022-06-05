@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cem-answer-cert
+  namespace: dev
+data:
+

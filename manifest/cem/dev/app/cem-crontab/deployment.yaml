@@ -1,0 +1,117 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-crontab
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: cem-crontab
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: dev
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cem-crontab
+      app.kubernetes.io/release: beta
+      app.kubernetes.io/track: nightly
+      app.kubernetes.io/component: microservices
+      app.kubernetes.io/tier: backend
+      app.kubernetes.io/runtime: java
+      app.kubernetes.io/enviroment: dev
+  template:
+    metadata:
+      name: cem-crontab
+      namespace: dev
+      labels:
+        app.kubernetes.io/name: cem-crontab
+        app.kubernetes.io/release: beta
+        app.kubernetes.io/track: nightly
+        app.kubernetes.io/component: microservices
+        app.kubernetes.io/tier: backend
+        app.kubernetes.io/runtime: java
+        app.kubernetes.io/enviroment: dev
+    spec:
+      hostname: cem-crontab
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: node.kubernetes.io/env
+                  operator: In
+                  values:
+                    - dev
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - k8s-node2
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: cem-crontab
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100-dev/cem-crontab:dev"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: scripts
+              mountPath: /usr/bin/run
+              subPath: run
+            - name: logs
+              mountPath: /app/app/logs
+            - name: plugins
+              mountPath: /app/plugins
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              memory: "1Gi"
+          env:
+            - name: JAVA_XMS
+              value: 1024m
+            - name: JAVA_XMX
+              value: 1024m
+            - name: JAVA_XMN
+              value: 384m
+          command:
+            - run
+            - cem-crontab
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8105
+          startupProbe:
+            httpGet:
+              path: /crontab/health
+              port: 8105
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+      volumes:
+        - name: scripts
+          configMap:
+            name: scripts
+            defaultMode: 0711
+        - name: logs
+          nfs:
+            server:
+            path: /data/nfs/cem/dev/logs/cem-crontab
+        - name: plugins
+          nfs:
+            server:
+            path: /data/nfs/plugins
+...

@@ -1,0 +1,88 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cem
+  namespace: staging
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      access_log /var/log/nginx/pre.cempro.cn.access.log;
+      error_log /var/log/nginx/pre.cempro.cn.error.log;
+      location = / {
+          rewrite ^/(.*)$ https://pre.cempro.cn/website/$1 permanent;
+      }
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - pre.cempro.cn
+    secretName: cempro.cn-tls
+  rules:
+  - host: pre.cempro.cn
+    http:
+      paths:
+      - path: /website
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-website
+            port:
+              number: 80
+      - path: /a/
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-answer-web
+            port:
+              number: 80
+      - path: /child/answer
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-answer-web
+            port:
+              number: 80
+      - path: /child/dashboard
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-dashboard-web
+            port:
+              number: 80
+      - path: /h5/
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-h5
+            port:
+              number: 80
+      - path: /library
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-library
+            port:
+              number: 80
+      - path: /child/survey
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-survey-web
+            port:
+              number: 80
+      - path: /child/new-survey
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-new-survey-web
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cem-main
+            port:
+              number: 80
+...

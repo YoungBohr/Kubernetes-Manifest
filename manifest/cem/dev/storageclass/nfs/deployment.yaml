@@ -1,0 +1,37 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+   name: nfs-client-provisioner
+spec:
+   replicas: 1
+   strategy:
+     type: Recreate
+   selector:
+     matchLabels:
+        app: nfs-client-provisioner
+   template:
+      metadata:
+         labels:
+            app: nfs-client-provisioner
+      spec:
+         serviceAccount: nfs-provisioner
+         containers:
+            -  name: nfs-client-provisioner
+               image: easzlab/nfs-subdir-external-provisioner:v4.0.1
+               volumeMounts:
+                 -  name: nfs-client-root
+                    mountPath:  /persistentvolumes
+               env:
+                 -  name: PROVISIONER_NAME 
+                    value: data100.io/nfs
+                 -  name: NFS_SERVER
+                    value: 192.168.1.79
+                 -  name: NFS_PATH
+                    value: /data/nfs/cem/dev/logs
+         volumes:
+           - name: nfs-client-root
+             nfs:
+               server:
+               path: /data/nfs/cem/dev/logs
+...

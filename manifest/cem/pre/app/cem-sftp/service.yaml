@@ -1,0 +1,29 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cem-sftp
+  namespace: pre
+  labels:
+    app.kubernetes.io/name: cem-sftp
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: pre
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cem-sftp
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: pre
+  ports:
+    - name: server
+      port: 80
+      targetPort: 8088
+      protocol: TCP

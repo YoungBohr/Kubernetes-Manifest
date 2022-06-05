@@ -1,0 +1,95 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: kube-monitoring
+  labels:
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/version: "1.3.1"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: kube-monitoring
+    app.kubernetes.io/component: exporter
+spec:
+  minReadySeconds: 0
+  revisionHistoryLimit: 1
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node-exporter
+      app.kubernetes.io/version: "1.3.1"
+      app.kubernetes.io/tier: middleware
+      app.kubernetes.io/enviroment: kube-monitoring
+      app.kubernetes.io/component: exporter
+  template:
+    metadata:
+      name: node-exporter
+      labels:
+        app.kubernetes.io/name: node-exporter
+        app.kubernetes.io/version: "1.3.1"
+        app.kubernetes.io/tier: middleware
+        app.kubernetes.io/enviroment: kube-monitoring
+        app.kubernetes.io/component: exporter
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9100'
+        prometheus.io/path: '/metrics'
+    spec:
+      hostname: prometheus
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      containers:
+        - name: node-exporter
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100/node-exporter:1.3.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              protocol: TCP
+              containerPort: 9100
+          args:
+            - --path.procfs
+            - /host/proc
+            - --path.sysfs
+            - /host/sys
+            - --collector.systemd
+            - --collector.systemd.unit-whitelist=(docker|sshd|kubelet).service
+            - --collector.filesystem.ignored-mount-points
+            - '"^/(sys|proc|dev|host|etc)($|/)"'
+          volumeMounts:
+            - name: dev
+              mountPath: /host/dev
+              readOnly: true
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+            - name: rootfs
+              mountPath: /rootfs
+              readOnly: true
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: rootfs
+          hostPath:
+            path: /
+...

@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rancher
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: rancher
+    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: kube-system
+    app.kubernetes.io/component: platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: rancher
+    app.kubernetes.io/version: "2.6"
+    app.kubernetes.io/tier: middleware
+    app.kubernetes.io/enviroment: kube-system
+    app.kubernetes.io/component: platform
+  ports:
+    - name: "http"
+      port: 1080
+      targetPort: 80
+      protocol: TCP
+    - name: "https"
+      port: 1433
+      targetPort: 443
+      protocol: TCP
+...

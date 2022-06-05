@@ -1,0 +1,133 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cem-analysis
+  namespace: dev
+  labels:
+    app.kubernetes.io/name: cem-analysis
+    app.kubernetes.io/release: beta
+    app.kubernetes.io/track: nightly
+    app.kubernetes.io/component: microservices
+    app.kubernetes.io/tier: backend
+    app.kubernetes.io/runtime: java
+    app.kubernetes.io/enviroment: dev
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: "100%"
+      maxUnavailable: "0%"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cem-analysis
+      app.kubernetes.io/release: beta
+      app.kubernetes.io/track: nightly
+      app.kubernetes.io/component: microservices
+      app.kubernetes.io/tier: backend
+      app.kubernetes.io/runtime: java
+      app.kubernetes.io/enviroment: dev
+  template:
+    metadata:
+      name: cem-analysis
+      namespace: dev
+      labels:
+        app.kubernetes.io/name: cem-analysis
+        app.kubernetes.io/release: beta
+        app.kubernetes.io/track: nightly
+        app.kubernetes.io/component: microservices
+        app.kubernetes.io/tier: backend
+        app.kubernetes.io/runtime: java
+        app.kubernetes.io/enviroment: dev
+    spec:
+      hostname: cem-analysis
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: aliyun-regcred
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: node.kubernetes.io/env
+                  operator: In
+                  values:
+                    - dev
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - k8s-node2
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - cem-crontab
+                        - cem-gateway
+                        - cem-message
+                        - cem-sftp
+                topologyKey: kubernetes.io/hostname
+      nodeSelector:
+        node.kubernetes.io/env: dev
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: cem-analysis
+          image: "registry-vpc.cn-zhangjiakou.aliyuncs.com/data100-dev/cem-analysis:dev"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: scripts
+              mountPath: /usr/bin/run
+              subPath: run
+            - name: logs
+              mountPath: /app/app/logs
+            - name: plugins
+              mountPath: /app/plugins
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              memory: "1Gi"
+          env:
+            - name: JAVA_XMS
+              value: 1024m
+            - name: JAVA_XMX
+              value: 1024m
+            - name: JAVA_XMN
+              value: 384m
+          command:
+            - run
+            - cem-analysis
+          ports:
+            - name: server
+              protocol: TCP
+              containerPort: 8108
+          startupProbe:
+            httpGet:
+              path: /analysis/health
+              port: 8108
+            initialDelaySeconds: 9
+            periodSeconds: 1
+            failureThreshold: 180
+            timeoutSeconds: 3
+      volumes:
+        - name: scripts
+          configMap:
+            name: scripts
+            defaultMode: 0711
+        - name: logs
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/cem/dev/logs/cem-analysis
+        - name: plugins
+          nfs:
+            server: 192.168.1.79
+            path: /data/nfs/plugins
+...

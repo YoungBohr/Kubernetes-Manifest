@@ -35,8 +35,5 @@ data:
   worker-processes: "4"
   ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA"
   ssl-protocols: "TLSv1 TLSv1.1 TLSv1.2 TLSv1.3"
-  log-format-upstream: '{"time": "$time_iso8601", "remote_addr": "$proxy_protocol_addr", "x_forward_for": "$proxy_add_x_forwarded_for", "request_id": "$req_id",
-    "remote_user": "$remote_user", "bytes_sent": $bytes_sent, "request_time": $request_time, "status": $status, "vhost": "$host", "request_proto": "$server_protocol",
-    "path": "$uri", "request_query": "$args", "request_length": $request_length, "duration": $request_time,"method": "$request_method", "http_referrer": "$http_referer",
-    "http_user_agent": "$http_user_agent" }'
+  log-format-upstream: '{"time":"[$time_local]","status":"$status","host":"$http_host","request":"$request","proxy":"[$proxy_upstream_name]","clientip":"$remote_addr","x_forward_for":"$proxy_add_x_forwarded_for","remote_addr":"$proxy_protocol_addr","remote_user":"$remote_user","nginx_host":"$server_addr","vhost":"$host","method":"$request_method","url":"$request_uri","request_query":"$args","request_proto":"$server_protocol","request_length":"$request_length","body_bytes_sent":"$body_bytes_sent","duration":"$request_time","upstream_response_time":"$upstream_response_time","http_referrer":"$http_referer","http_user_agent":"$http_user_agent"}；'
 ...
